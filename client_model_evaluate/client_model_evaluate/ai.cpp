@@ -188,21 +188,105 @@ int moveCharacter(vector<int> classNumber)
 {
 	int idx = 0;
 	/*-----don't touch-----*/
-
 	// sample code using idx and classNumber on idx
-
+	int loc[18];
 	int position = 3;
 
 	for (auto tmp : classNumber)
 	{
-		if (tmp == 1)
-		{
-			position = towardPoint(idx);
+		loc[idx] = tmp;
+
+		//tmp 0 사과, 1 폭탄, 2 사람, 3 꽃
+		if (tmp == 0 && idx < 6) //0~5사이에 사과가 있으면 먹는다 
+		{	//  짝수일 때 -> idx % 2 = 0
+			position = idx;
 			break;
+		}
+
+		if (tmp == 0 && idx % 2 == 0 && idx > 5) //2칸 후 직선위치에 사과가 있을 때
+		{
+			int bombcheck = idx / 2 - 3; //사이의
+			if (loc[bombcheck] == 3) //사이에 꽃이 있으면
+			{
+				position = bombcheck; //그 방향으로 이동한다
+				break;
+			}
+
+		}
+
+		if (tmp == 0 && idx % 2 == 1 && idx > 5 && idx < 17) //2칸 후 꺽인 위치에 사과가 있을 때
+		{
+			int bombcheck2 = (idx - 1) / 2 - 3; //시계방향 중간 위치
+			int bombcheck3 = (idx - 1) / 2 - 2; //반시계방향 중간 위치
+
+			if (loc[bombcheck2] == 3) //시계방향 중간 위치에 꽃이 있으면
+			{
+				position = bombcheck2; //그 방향으로 이동한다
+				break;
+			}
+
+			if (loc[bombcheck3] == 3) //반시계방향 중간 위치에 꽃이 있으면
+			{
+				position = bombcheck3; //그 방향으로 이동한다
+				break;
+			}
+
+		}
+
+		if (idx == 17 && tmp == 0) //17번, 마지막 칸에 대한 조건
+		{
+
+			if (loc[5] == 3) //시계방향 중간 위치에 꽃이 있으면
+			{
+				position = 5; //그 방향으로 이동한다
+				break;
+			}
+
+			if (loc[0] == 3) //반시계방향 중간 위치에 꽃이 있으면
+			{
+				position = 0; //그 방향으로 이동한다
+				break;
+			}
+
+		}
+		if (idx == 17 && tmp != 0) //17번, 마지막 칸에 대한 조건
+		{
+			if (loc[0] != 1)
+			{
+				position = 0;
+				break;
+			}
+			if (loc[1] != 1)
+			{
+				position = 1;
+				break;
+			}
+			if (loc[2] != 1)
+			{
+				position = 2;
+				break;
+			}
+			if (loc[3] != 1)
+			{
+				position = 3;
+				break;
+			}
+			if (loc[4] != 1)
+			{
+				position = 4;
+				break;
+			}
+			if (loc[5] != 1)
+			{
+				position = 5;
+				break;
+			}
 		}
 
 		idx++;
 	}
+
+
 
 	if (dominance)
 		position = -1;
@@ -226,84 +310,108 @@ vector<double> featureDescript(Mat& m) {
 
 	/*-----don't touch-----*/
 
+	int DENSITY = 10;
+
 	int a = 0;
 	int max_top = 0;
 	int max_bottom = 200;
 	int max_left = 0;
 	int max_right = 200;
 
+	/////////////////////////////////////////////////////////   number of a==0
 	Vec4b tmp = m.at<Vec4b>(0, 0);
 	if (tmp[3] == 0)
 		a++;
-	Vec4b tmp = m.at<Vec4b>(0, m.cols);
+	tmp = m.at<Vec4b>(0, m.cols - 1);
 	if (tmp[3] == 0)
 		a++;
-	Vec4b tmp = m.at<Vec4b>(m.rows, 0);
+	tmp = m.at<Vec4b>(m.rows - 1, 0);
 	if (tmp[3] == 0)
 		a++;
-	Vec4b tmp = m.at<Vec4b>(m.rows, m.cols);
+	tmp = m.at<Vec4b>(m.rows - 1, m.cols - 1);
 	if (tmp[3] == 0)
 		a++;
 
-	ret.push_back((double)a);
+	/////////////////////////////////////////////////////////
 
 	if (a>0) {
 		int b = 0;
-		while (1) {
+		while (b == 0) {
+			max_top += 10;
 			for (int i = 0; i<m.rows; i++) {
 				if (m.at<Vec4b>(max_top, i)[3] != 0) {
 					b = 1;
 					break;
 				}
 			}
-			if (b == 1) {
-				break;
-			}
-			max_top += 10;
 		}
+
 		b = 0;
-		while (1) {
+		while (b == 0) {
+			max_bottom -= 10;
 			for (int i = 0; i<m.rows; i++) {
 				if (m.at<Vec4b>(max_bottom, i)[3] != 0) {
 					b = 1;
 					break;
 				}
 			}
-			if (b == 1) {
-				break;
-			}
-			max_bottom -= 10;
 		}
+
 		b = 0;
-		while (1) {
+		while (b == 0) {
+			max_left += 10;
 			for (int i = 0; i<m.cols; i++) {
 				if (m.at<Vec4b>(i, max_left)[3] != 0) {
 					b = 1;
 					break;
 				}
 			}
-			if (b == 1) {
-				break;
-			}
-			max_left += 10;
 		}
+
 		b = 0;
-		while (1) {
+		while (b == 0) {
+			max_right -= 10;
 			for (int i = 0; i<m.cols; i++) {
 				if (m.at<Vec4b>(i, max_right)[3] != 0) {
 					b = 1;
 					break;
 				}
 			}
-			if (b == 1) {
-				break;
-			}
-			max_right -= 10;
 		}
-
-
-		return ret;
 	}
+
+	int rev_rows = max_top - max_botom;
+	int rev_cols = max_right - max_left;
+
+	///////////////////////////////////////////////////////////
+	int sum_r;
+	int sum_g;
+	int sum_b;
+	for (int l = 0; l < n; l++) {
+		for (int m = 0; m < n; m++) {
+			for (int j = (rev_cols / n)*m; j < (rev_cols / n)*m; j++) {
+				for (i = (rev_rows / n)*l; i <(rev_rows / n)*(l + 1); i++) {
+					Vec4b tmp = m.at<Vec4b>(i + rev_rows, j + rev_cols);
+					sum_r += tmp[2];
+					sum_g += tmp[1];
+					sum_b += tmp[0];
+				}
+			}
+			sum_r = sum_r / (rev_rows*rev_cols)*n*n;
+			sum_g = sum_g / (rev_rows*rev_cols)*n*n;
+			sum_b = sum_b / (rev_rows*rev_cols)*n*n;
+
+			ret.push_back((double)sum_r);
+			ret.push_back((double)sum_g);
+			ret.push_back((double)sum_b);
+		}
+	}
+
+	ret.push_back((double)a);
+	ret.push_back((double)((rev_rows*1.00) / rev_cols);
+
+	return ret;
+}
 
 int classify(Mat example, vector<pair<vector<double>, int> > &training, int nb_class) {
 	const int k = 10;
@@ -323,7 +431,7 @@ int classify(Mat example, vector<pair<vector<double>, int> > &training, int nb_c
 	for (int i = 0; i < training.size(); i++) {
 		tmp_distance = dist(training[i].first, exam_des);
 		
-		v.push_back(pair<int, double>(training[i].second, tmp_distance))
+		v.push_back(pair<int, double>(training[i].second, tmp_distance));
 	}
 
 	sort(v.begin(), v.end());
@@ -341,7 +449,7 @@ int classify(Mat example, vector<pair<vector<double>, int> > &training, int nb_c
 			num2++;
 		}
 		else if (key_value == 3) {
-			num3++
+			num3++;
 		}
 	}
 

@@ -426,12 +426,12 @@ int classify(Mat example, vector<pair<vector<double>, int> > &training, int nb_c
 	int num2 = 0; //얼굴
 	int num3 = 0; //꽃
 	
-	vector<pair<int, double> v;
+	vector<pair<double,int> > v;
 
 	for (int i = 0; i < training.size(); i++) {
 		tmp_distance = dist(training[i].first, exam_des);
 		
-		v.push_back(pair<int, double>(training[i].second, tmp_distance));
+		v.push_back(pair<double, int>(tmp_distance, training[i].second));
 	}
 
 	sort(v.begin(), v.end());
@@ -566,8 +566,8 @@ double dist(Vector<double> vec1, Vector<double>vec2) {
 	//n은 알아서 전역변수로 선언 해놓고
 	for (int i = 0; i<n*n * 3; i++) {
 		//위치 보정값 w 결정(Center is important), 0.5<w<1.5
-		int a = i%n;
-		int b = i / n;
+		int a = (i/3)%n;
+		int b = (i / 3) / n;
 		int w = 0;
 		if (a > 2 / n) {
 			w += -2 * a / n;

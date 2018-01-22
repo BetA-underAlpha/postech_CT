@@ -421,10 +421,8 @@ int classify(Mat example, vector<pair<vector<double>, int> > &training, int nb_c
 
 	auto exam_des = featureDescript(example);
 
-	int num0 = 0; //»ç°ú
-	int num1 = 0; //ÆøÅº
-	int num2 = 0; //¾ó±¼
-	int num3 = 0; //²É
+	int num[4] = 0;
+	
 	
 	vector<pair<double,int> > v;
 
@@ -438,26 +436,33 @@ int classify(Mat example, vector<pair<vector<double>, int> > &training, int nb_c
 
 	for (int i = 0; i < k; i++) {
 
-		int key_value = v[i].first;
+		int key_value = v[i].second;
+
 		if (key_value == 0) {
-			num0++;
+			num[0]++;
 		}
 		else if (key_value == 1) {
-			num1++;
+			num[1]++;
 		}
 		else if (key_value == 2) {
-			num2++;
+			num[2]++;
 		}
 		else if (key_value == 3) {
-			num3++;
+			num[3]++;
 		}
 	}
 
-	predict = max(num0, max(num1, max(num2, num3)));
+	int max_num = 0;
+
+	for (i = 0; i < 4; i++) {
+		if (num[i] >= num[max_num]) {
+			max_num = i;
+		}
+	}
 
 	/*-----don't touch-----*/
 
-	return predict;
+	return max_num;
 }
 
 vector<int> predict(vector<pair<vector<double>, int> > model, int nb_class) {

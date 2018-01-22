@@ -318,7 +318,7 @@ vector<double> featureDescript(Mat& m) {
 	int max_left = 0;
 	int max_right = 200;
 
-	/////////////////////////////////////////////////////////   number of a==0
+	/*////////////////////////////////////////////////////////   number of a==0
 	Vec4b tmp = m.at<Vec4b>(0, 0);
 	if (tmp[3] == 0)
 		a++;
@@ -332,7 +332,7 @@ vector<double> featureDescript(Mat& m) {
 	if (tmp[3] == 0)
 		a++;
 
-	/////////////////////////////////////////////////////////
+	////////////////////////////////////////////////////////*/
 
 	if (a>0) {
 		int b = 0;
@@ -561,15 +561,36 @@ bool input(vector<pair<Mat, int> > &list, string folder, int cs) {
 double dist(Vector<double> vec1, Vector<double>vec2) {
 
 	double d = 0;
-	double edge = 0;
+	//double edge = 0;
 	ratio = 0;
 	//n은 알아서 전역변수로 선언 해놓고
 	for (int i = 0; i<n*n * 3; i++) {
-		d += (vec1[i] - vec2[i])*(vec1[i] - vec2[i]);
+		//위치 보정값 w 결정(Center is important), 0.5<w<1.5
+		int a = i%n;
+		int b = i / n;
+		int w = 0;
+		if (a > 2 / n) {
+			w += -2 * a / n;
+			w += 2.5;
+		}
+		else {
+			w += 2 * a / n;
+			w += 0.5;
+		}
+		if (b > 2 / n) {
+			w += -2 * b / n;
+			w += 2.5;
+		}
+		else {
+			w += 2 * b / n;
+			w += 0.5;
+		}
+		w /= 2;
+		d += w*(vec1[i] - vec2[i])*(vec1[i] - vec2[i]);
 	}
-	double edge = abs(vec1[n*n * 3] - vec2[n*n * 3]);
-	edge *= 125;
-	d += 3 * n*n*edge*edge;
+	//double edge = abs(vec1[n*n*3]-vec2[n*n*3]);
+	//edge = 8*edge*edge*edge;
+	//d += 3*n*n*edge*edge;
 	ratio = vec1[3 * n*n + 1] / vec2[3 * n*n + 1];
 	if (ratio > 1) {
 		ratio = 1 / ratio;

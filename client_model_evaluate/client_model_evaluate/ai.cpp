@@ -1,5 +1,6 @@
 #include"ai.h"
 
+#include <time.h>
 #include <iostream>
 #include <io.h>
 #include <string>
@@ -15,7 +16,8 @@ using namespace cv;
 
 areaInfo area[MAX_SIZE_AREA];
 int dominance = 0;
-int n = 10;
+int n = 11;
+int checksum = 0;
 
 void aiInit(int classCount, vector<pair<Mat, int> > &train_set, vector<pair<vector<double>, int> > &preprocessTrain)
 {
@@ -133,9 +135,13 @@ void recvResult(SOCKET sock)
 
 void AI(SOCKET sock)
 {
+
 	int playerNextPosition;
 	int bombPosition;
 	int applePosition;
+	clock_t begin, end;
+
+	
 
 	vector<pair<Mat, int> > train_set;
 	vector<pair<vector<double>, int> > train_feature;
@@ -143,12 +149,19 @@ void AI(SOCKET sock)
 	aiInit(4, train_set, train_feature);
 
 	while (1)
-	{
+	{	
 		recvResult(sock);
+
+		begin = clock();
 
 		aiCode(playerNextPosition, 4, train_feature);
 
+		end = clock();
+
+		cout << "time : " << ((end - begin) / CLOCKS_PER_SEC) << endl;
+
 		sendResult(sock, playerNextPosition);
+		
 	}
 }
 
@@ -189,21 +202,72 @@ int moveCharacter(vector<int> classNumber)
 	int idx = 0;
 	/*-----don't touch-----*/
 	// sample code using idx and classNumber on idx
-	int loc[18];
-	int position = 3;
+	int loc[18] = { 0 };
+	int position = -1;
+
+	int more_apple = 0;
 
 	for (auto tmp : classNumber)
 	{
 		loc[idx] = tmp;
+	}
 
-		//tmp 0 사과, 1 폭탄, 2 사람, 3 꽃
-		if (tmp == 0 && idx < 6) //0~5사이에 사과가 있으면 먹는다 
-		{	//  짝수일 때 -> idx % 2 = 0
-			position = idx;
-			break;
+	if (dominance == 0) {
+		vector<int> man;
+		for (idx = 0; i < 18; i++) {
+			if (loc[idx] == 2) {
+				man.push_back(idx);
+			}
+		}
+		for (int i = 0; i < man.size(); i++) {
+			if (man[i] == 0) {
+				loc[1] = 1;
+				loc[5] = 1;
+			}
+			else if (man[i] < 6) {
+				loc[man[i] + 1] = 1;
+				loc[man[i] - 1] = 1;
+			}
+			else if (man[i] % 2 == 0) {
+				loc[(man[i] / 2) - 3] = 1;
+			}
+			else if (man[i] != 17) {
+				loc[(man[i] / 2) - 3] = 1;
+				loc[(man[i] / 2) - 2] = 1;
+			}
+			else {
+				loc[5] = 1;
+				loc[0] = 1;
+			}
 		}
 
-		if (tmp == 0 && idx % 2 == 0 && idx > 5) //2칸 후 직선위치에 사과가 있을 때
+
+
+	}
+
+	for (idx = 0; idx < 18; idx++)
+	{
+		if (loc[idx] == -1)
+		{
+			continue;
+		}
+		//tmp 0 사과, 1 폭탄, 2 사람, 3 꽃
+		if (loc[idx] == 0 && idx < 6) //0~5사이에 사과가 있으면 먹는다 
+		{   //  짝수일 때 -> idx % 2 = 0
+			int num = 0;
+			for (int i = -1; i < 2; i++) {
+				if (loc[(idx + 3) * 2 + i] == 0) {
+					num++;
+				}
+			}
+			if (num > more_apple) {
+				position = idx;
+				more_apple = num;
+			}
+
+		}
+		/////////////////////////////////////////////////////////////////////////////////////////////////
+		if (loc[idx] == 0 && idx % 2 == 0 && idx > 5) //2칸 후 직선위치에 사과가 있을 때
 		{
 			int bombcheck = idx / 2 - 3; //사이의
 			if (loc[bombcheck] == 3) //사이에 꽃이 있으면
@@ -213,8 +277,7 @@ int moveCharacter(vector<int> classNumber)
 			}
 
 		}
-
-		if (tmp == 0 && idx % 2 == 1 && idx > 5 && idx < 17) //2칸 후 꺽인 위치에 사과가 있을 때
+		if (loc[idx] == 0 && idx % 2 == 1 && idx > 5 && idx < 17) //2칸 후 꺽인 위치에 사과가 있을 때
 		{
 			int bombcheck2 = (idx - 1) / 2 - 3; //시계방향 중간 위치
 			int bombcheck3 = (idx - 1) / 2 - 2; //반시계방향 중간 위치
@@ -230,12 +293,9 @@ int moveCharacter(vector<int> classNumber)
 				position = bombcheck3; //그 방향으로 이동한다
 				break;
 			}
-
 		}
-
-		if (idx == 17 && tmp == 0) //17번, 마지막 칸에 대한 조건
+		if (idx == 17 && loc[idx] == 0) //17번, 마지막 칸에 대한 조건
 		{
-
 			if (loc[5] == 3) //시계방향 중간 위치에 꽃이 있으면
 			{
 				position = 5; //그 방향으로 이동한다
@@ -249,52 +309,36 @@ int moveCharacter(vector<int> classNumber)
 			}
 
 		}
-		if (idx == 17 && tmp != 0) //17번, 마지막 칸에 대한 조건
-		{
-			if (loc[0] != 1)
-			{
-				position = 0;
-				break;
-			}
-			if (loc[1] != 1)
-			{
-				position = 1;
-				break;
-			}
-			if (loc[2] != 1)
-			{
-				position = 2;
-				break;
-			}
-			if (loc[3] != 1)
-			{
-				position = 3;
-				break;
-			}
-			if (loc[4] != 1)
-			{
-				position = 4;
-				break;
-			}
-			if (loc[5] != 1)
-			{
-				position = 5;
-				break;
+
+	}
+
+	if (position < 0 || position > 5) //아직 칸을 못 정했을 경우(다 폭탄이거나 벽)
+	{
+		vector<int> able;
+		for (int i = 0; i < 6; i++) {
+			if (loc[i] != 1 && loc[i] != -1) {   //폭탄도 아니고 벽도 아닌 경우에만 벡터에 포함
+				able.push_back(i);
 			}
 		}
+		if (able.size() == 0) {
+			able.clear();
+			for (int i = 0; i < 6; i++) {
+				if (loc[i] != -1) {   //벽이 아닌 경우에만 벡터에 포함
+					able.push_back(i);
+				}
+			}
+		}
+		position = able[rand() % able.size()];
 
-		idx++;
 	}
 
 
-
-	if (dominance)
-		position = -1;
 
 	/*-----don't touch-----*/
 
 	return position;
 }
+
 
 void aiCode(int &playerNextPosition, int nb_class, vector<pair<vector<double>, int> > train_feature)
 {
@@ -336,48 +380,52 @@ vector<double> featureDescript(Mat& m) {
 
 	int b = 0;
 	while (b == 0 && max_top<max_bottom) {
-		max_top += 10;
 		for (int i = 0; i<m.rows; i++) {
 			if (m.at<Vec4b>(max_top, i)[3] != 0) {
 				b = 1;
 				break;
 			}
 		}
+		max_top += 1;
 	}
+
 	b = 0;
 	while (b == 0 && max_top<max_bottom) {
-		max_bottom -= 10;
 		for (int i = 0; i<m.rows; i++) {
 			if (m.at<Vec4b>(max_bottom, i)[3] != 0) {
 				b = 1;
 				break;
 			}
 		}
+		max_bottom -= 1;
 	}
+
 	b = 0;
 	while (b == 0 && max_left<max_right) {
-		max_left += 10;
+
 		for (int i = 0; i<m.cols; i++) {
 			if (m.at<Vec4b>(i, max_left)[3] != 0) {
 				b = 1;
 				break;
 			}
 		}
+		max_left += 1;
 	}
+
 	b = 0;
 	while (b == 0 && max_left<max_right ) {
-		max_right -= 10;
 		for (int i = 0; i<m.cols; i++) {
 			if (m.at<Vec4b>(i, max_right)[3] != 0) {
 				b = 1;
 				break;
 			}
 		}
+		max_right -= 1;
 	}
 
 
-	int rev_rows =  max_bottom - max_top;
-	int rev_cols = max_right - max_left;
+	int rev_cols =  max_bottom - max_top;
+	int rev_rows = max_right - max_left;
 	int i, j;
 	///////////////////////////////////////////////////////////
 	double sum_r=0;
@@ -388,7 +436,7 @@ vector<double> featureDescript(Mat& m) {
 		for (int l = 0; l < n; l++) {
 			for (i = rev_cols*p/n; i < (rev_cols*(p + 1))/n; i++) {
 				for (j = rev_rows*l/n; j < rev_rows*(l + 1)/n; j++) {
-					tmp = m.at<Vec4b>(i + max_left, j + max_top);
+					tmp = m.at<Vec4b>(max_top+i, max_left+j);
 					sum_r += tmp[2];
 					sum_g += tmp[1];
 					sum_b += tmp[0];
@@ -405,7 +453,7 @@ vector<double> featureDescript(Mat& m) {
 	}
 
 	//ret.push_back((double)a);
-	ret.push_back((double)((rev_rows*1.00) / rev_cols));
+	ret.push_back(((rev_rows*1.00) / rev_cols));
 
 	return ret;
 }
@@ -461,7 +509,7 @@ int classify(Mat example, vector<pair<vector<double>, int> > &training, int nb_c
 	}
 
 	/*-----don't touch-----*/
-
+	//if (max_num == 0) printf("0");
 	return max_num;
 }
 
@@ -477,13 +525,14 @@ vector<int> predict(vector<pair<vector<double>, int> > model, int nb_class) {
 			ret.push_back(pd_res);
 		}
 	}
+	
 
 	return ret;
 }
 
 float model_evaluate(vector<pair<Mat, int> > training, int nb_class) {
 	float error = 0.0;
-	const int k = 11;
+	const int k = 13;
 	vector<vector<int> > k_fold(k + 1);
 	vector<bool> check(training.size(), false);
 	int sz = training.size() / k;
@@ -527,7 +576,6 @@ float model_evaluate(vector<pair<Mat, int> > training, int nb_class) {
 
 		error += (float)result / sz;
 	}
-
 	return (float)error / k;
 }
 
@@ -621,8 +669,8 @@ double dist(vector<double> vec1, vector<double>vec2) {
 	if (ratio > 1) {
 		ratio = 1 / ratio;
 	}
-	ratio *= 500;
-	ratio = 500 - ratio;
-	d += 3 * n*n*ratio*ratio;
+	ratio *= 255;
+	ratio = 255 - ratio;
+	d += n*n*ratio*ratio/4;
 	return d;
 }

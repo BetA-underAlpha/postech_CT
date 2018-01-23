@@ -52,4 +52,3 @@ int classify(Mat example, vector<pair<vector<double>, int> > &training, int nb_c
 vector<int> predict(vector<pair<vector<double>, int> > model, int nb_class);
 float model_evaluate(vector<pair<Mat, int> > training, int nb_class);
 bool input(vector<pair<Mat, int> > &list, string folder, int cs);
-double dist(vector<double> vec1, vector<double>vec2);

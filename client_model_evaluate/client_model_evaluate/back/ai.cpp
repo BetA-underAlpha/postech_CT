@@ -15,7 +15,7 @@ using namespace cv;
 
 areaInfo area[MAX_SIZE_AREA];
 int dominance = 0;
-int n = 10;
+int n = 0;
 
 void aiInit(int classCount, vector<pair<Mat, int> > &train_set, vector<pair<vector<double>, int> > &preprocessTrain)
 {
@@ -314,98 +314,101 @@ vector<double> featureDescript(Mat& m) {
 
 	int a = 0;
 	int max_top = 0;
-	int max_bottom = 199;
+	int max_bottom = 200;
 	int max_left = 0;
-	int max_right = 199;
+	int max_right = 200;
 
 	/*////////////////////////////////////////////////////////   number of a==0
 	Vec4b tmp = m.at<Vec4b>(0, 0);
 	if (tmp[3] == 0)
-	a++;
+		a++;
 	tmp = m.at<Vec4b>(0, m.cols - 1);
 	if (tmp[3] == 0)
-	a++;
+		a++;
 	tmp = m.at<Vec4b>(m.rows - 1, 0);
 	if (tmp[3] == 0)
-	a++;
+		a++;
 	tmp = m.at<Vec4b>(m.rows - 1, m.cols - 1);
 	if (tmp[3] == 0)
-	a++;
+		a++;
 
 	////////////////////////////////////////////////////////*/
 
-	int b = 0;
-	while (b == 0 && max_top<max_bottom) {
-		max_top += 10;
-		for (int i = 0; i<m.rows; i++) {
-			if (m.at<Vec4b>(max_top, i)[3] != 0) {
-				b = 1;
-				break;
+	if (a>0) {
+		int b = 0;
+		while (b == 0) {
+			max_top += 10;
+			for (int i = 0; i<m.rows; i++) {
+				if (m.at<Vec4b>(max_top, i)[3] != 0) {
+					b = 1;
+					break;
+				}
 			}
 		}
-	}
-	b = 0;
-	while (b == 0 && max_top<max_bottom) {
-		max_bottom -= 10;
-		for (int i = 0; i<m.rows; i++) {
-			if (m.at<Vec4b>(max_bottom, i)[3] != 0) {
-				b = 1;
-				break;
+
+		b = 0;
+		while (b == 0) {
+			max_bottom -= 10;
+			for (int i = 0; i<m.rows; i++) {
+				if (m.at<Vec4b>(max_bottom, i)[3] != 0) {
+					b = 1;
+					break;
+				}
 			}
 		}
-	}
-	b = 0;
-	while (b == 0 && max_left<max_right) {
-		max_left += 10;
-		for (int i = 0; i<m.cols; i++) {
-			if (m.at<Vec4b>(i, max_left)[3] != 0) {
-				b = 1;
-				break;
+
+		b = 0;
+		while (b == 0) {
+			max_left += 10;
+			for (int i = 0; i<m.cols; i++) {
+				if (m.at<Vec4b>(i, max_left)[3] != 0) {
+					b = 1;
+					break;
+				}
 			}
 		}
-	}
-	b = 0;
-	while (b == 0 && max_left<max_right ) {
-		max_right -= 10;
-		for (int i = 0; i<m.cols; i++) {
-			if (m.at<Vec4b>(i, max_right)[3] != 0) {
-				b = 1;
-				break;
+
+		b = 0;
+		while (b == 0) {
+			max_right -= 10;
+			for (int i = 0; i<m.cols; i++) {
+				if (m.at<Vec4b>(i, max_right)[3] != 0) {
+					b = 1;
+					break;
+				}
 			}
 		}
 	}
 
-
-	int rev_rows =  max_bottom - max_top;
+	int rev_rows = max_top - max_botom;
 	int rev_cols = max_right - max_left;
-	int i, j;
+
 	///////////////////////////////////////////////////////////
-	double sum_r=0;
-	double sum_g=0;
-	double sum_b=0;
-	Vec4b tmp;
-	for (int p = 0; p < n; p++) {
-		for (int l = 0; l < n; l++) {
-			for (i = rev_cols*p/n; i < (rev_cols*(p + 1))/n; i++) {
-				for (j = rev_rows*l/n; j < rev_rows*(l + 1)/n; j++) {
-					tmp = m.at<Vec4b>(i + max_left, j + max_top);
+	int sum_r;
+	int sum_g;
+	int sum_b;
+	for (int l = 0; l < n; l++) {
+		for (int m = 0; m < n; m++) {
+			for (int j = (rev_cols / n)*m; j < (rev_cols / n)*m; j++) {
+				for (i = (rev_rows / n)*l; i <(rev_rows / n)*(l + 1); i++) {
+					Vec4b tmp = m.at<Vec4b>(i + rev_rows, j + rev_cols);
 					sum_r += tmp[2];
 					sum_g += tmp[1];
 					sum_b += tmp[0];
 				}
 			}
-			sum_r = sum_r*n*n / (rev_rows*rev_cols);
-			sum_g = sum_g*n*n / (rev_rows*rev_cols);
-			sum_b = sum_b*n*n / (rev_rows*rev_cols);
-			
-			ret.push_back(sum_r);
-			ret.push_back(sum_g);
-			ret.push_back(sum_b);
+			sum_r = sum_r / (rev_rows*rev_cols)*n*n;
+			sum_g = sum_g / (rev_rows*rev_cols)*n*n;
+			sum_b = sum_b / (rev_rows*rev_cols)*n*n;
+
+			ret.push_back((double)sum_r);
+			ret.push_back((double)sum_g);
+			ret.push_back((double)sum_b);
 		}
 	}
 
-	//ret.push_back((double)a);
-	ret.push_back((double)((rev_rows*1.00) / rev_cols));
+	ret.push_back((double)a);
+	ret.push_back((double)((rev_rows*1.00) / rev_cols);
 
 	return ret;
 }
@@ -417,18 +420,15 @@ int classify(Mat example, vector<pair<vector<double>, int> > &training, int nb_c
 	/*-----don't touch-----*/
 
 	auto exam_des = featureDescript(example);
-	double tmp_distance;
 
-	int num[4] = { 0 };
-
+	int num[4] = 0;
 	
-
-	vector<pair<double, int> > v;
+	
+	vector<pair<double,int> > v;
 
 	for (int i = 0; i < training.size(); i++) {
-		//printf("%f", training[i].first);
 		tmp_distance = dist(training[i].first, exam_des);
-		//printf("%lf", tmp_distance);
+		
 		v.push_back(pair<double, int>(tmp_distance, training[i].second));
 	}
 
@@ -454,7 +454,7 @@ int classify(Mat example, vector<pair<vector<double>, int> > &training, int nb_c
 
 	int max_num = 0;
 
-	for (int i = 0; i < 4; i++) {
+	for (i = 0; i < 4; i++) {
 		if (num[i] >= num[max_num]) {
 			max_num = i;
 		}
@@ -553,26 +553,6 @@ bool input(vector<pair<Mat, int> > &list, string folder, int cs) {
 
 		string name(FindData.cFileName);
 		Mat file = imread(realPath + name, -1);
-		if (file.channels() == 3)
-		{
-			vector<cv::Mat> channels;
-			split(file, channels);
-			Mat alpha;
-			channels[0].copyTo(alpha);
-
-			for (int i = 0; i < file.rows; i++)
-			{
-				for (int j = 0; j < file.cols; j++)
-				{
-					char& a = alpha.at<char>(i, j);
-					a = 255;
-				}
-			}
-			channels.push_back(alpha);
-			merge(channels, file);
-		}
-
-
 
 		list.push_back({ file, cs });
 
@@ -583,18 +563,18 @@ bool input(vector<pair<Mat, int> > &list, string folder, int cs) {
 	return true;
 }
 
-double dist(vector<double> vec1, vector<double>vec2) {
+double dist(Vector<double> vec1, Vector<double>vec2) {
 
 	double d = 0;
 	//double edge = 0;
-	double ratio = 0;
+	ratio = 0;
 	//n은 알아서 전역변수로 선언 해놓고
 	for (int i = 0; i<n*n * 3; i++) {
 		//위치 보정값 w 결정(Center is important), 0.5<w<1.5
-		int a = (i / 3) % n;
+		int a = (i/3)%n;
 		int b = (i / 3) / n;
-		double w = 0;
-		if (a > n / 2) {
+		int w = 0;
+		if (a > 2 / n) {
 			w += -2 * a / n;
 			w += 2.5;
 		}
@@ -602,7 +582,7 @@ double dist(vector<double> vec1, vector<double>vec2) {
 			w += 2 * a / n;
 			w += 0.5;
 		}
-		if (b > n / 2) {
+		if (b > 2 / n) {
 			w += -2 * b / n;
 			w += 2.5;
 		}
@@ -611,13 +591,12 @@ double dist(vector<double> vec1, vector<double>vec2) {
 			w += 0.5;
 		}
 		w /= 2;
-
 		d += w*(vec1[i] - vec2[i])*(vec1[i] - vec2[i]);
 	}
 	//double edge = abs(vec1[n*n*3]-vec2[n*n*3]);
 	//edge = 8*edge*edge*edge;
 	//d += 3*n*n*edge*edge;
-	ratio = vec1[3*n*n] / vec2[3*n*n];
+	ratio = vec1[3 * n*n + 1] / vec2[3 * n*n + 1];
 	if (ratio > 1) {
 		ratio = 1 / ratio;
 	}
